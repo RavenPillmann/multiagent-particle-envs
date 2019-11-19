@@ -98,6 +98,9 @@ class World(object):
         self.contact_force = 1e+2
         self.contact_margin = 1e-3
 
+        self.borders = [] # x/y of border rectangle
+        self.line_of_scrimmage = 50 #number between 10 and 110
+
     # return all entities in the world
     @property
     def entities(self):
