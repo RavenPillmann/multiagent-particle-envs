@@ -177,7 +177,12 @@ class World(object):
             agent.state.c = np.zeros(self.dim_c)
         else:
             noise = np.random.randn(*agent.action.c.shape) * agent.c_noise if agent.c_noise else 0.0
-            agent.state.c = agent.action.c + noise      
+            agent.state.c = agent.action.c + noise
+
+        # Set agent to out of bounds???
+        position = agent.p_pos
+        if (position_x < self.borders[0,0] or position_x > self.borders[1,0] or position_y < self.borders[0, 1] or position_y > self.borders[1, 1]):
+            agent.in_bounds = False
 
     # get collision forces for any contact between two entities
     def get_collision_force(self, entity_a, entity_b):
