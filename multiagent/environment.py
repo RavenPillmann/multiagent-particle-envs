@@ -3,6 +3,13 @@ from gym import spaces
 from gym.envs.registration import EnvSpec
 import numpy as np
 from multiagent.multi_discrete import MultiDiscrete
+from multiagent.scenarios import constants
+
+NOT_DONE = 0
+Q_BACK_LINE_OF_SCRIMMAGE = 1
+AGENT_OUT_OF_BOUNDS = 2
+D_LINE_REACHED_Q_BACK = 3
+Q_BACK_NOT_IN_BOUNDS = 4
 
 # environment for all agents in the multiagent world
 # currently code assumes that no agents will be created/destroyed at runtime!
@@ -24,7 +31,7 @@ class MultiAgentEnv(gym.Env):
         self.reward_callback = reward_callback
         self.observation_callback = observation_callback
         self.info_callback = info_callback
-        self.done_callback = done_callback
+        # self.done_callback = _done_callback
         # environment parameters
         self.discrete_action_space = True
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
@@ -38,7 +45,7 @@ class MultiAgentEnv(gym.Env):
         # configure spaces
         self.action_space = []
         self.observation_space = []
-        for agent in self.agents:
+        for agent in self.get_agents():
             total_action_space = []
             # physical action space
             if self.discrete_action_space:
@@ -77,6 +84,9 @@ class MultiAgentEnv(gym.Env):
             self.viewers = [None] * self.n
         self._reset_render()
 
+    def get_agents(self):
+        return [agent for agent in self.agents if not agent.is_done]
+
     def step(self, action_n):
         obs_n = []
         reward_n = []
@@ -91,9 +101,18 @@ class MultiAgentEnv(gym.Env):
         # record observation for each agent
         for agent in self.agents:
             obs_n.append(self._get_obs(agent))
-            reward_n.append(self._get_reward(agent))
-            done_n.append(self._get_done(agent))
+            reward = self._get_reward(agent)
+            is_done = self.done_callback(agent, self.world)
+            done_n.append(is_done)
+            # TODO: 
+            # If done, I need to somehow indicate that so that no more actions are taken...
+            if is_done:
+                agent.is_done = True
 
+                addition_reward = self.get_final_reward(is_done, agent)
+                reward = reward + additional_reward
+
+            reward_n.append(reward)
             info_n['n'].append(self._get_info(agent))
 
         # all agents get total reward in cooperative case
@@ -103,6 +122,28 @@ class MultiAgentEnv(gym.Env):
 
         return obs_n, reward_n, done_n, info_n
 
+
+
+    def get_final_reward(self, is_done, agent):
+        if (is_done == Q_BACK_LINE_OF_SCRIMMAGE):
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return 20
+            else:
+                return -20
+        elif (is_done == AGENT_OUT_OF_BOUNDS):
+            return -20
+        elif (is_done == D_LINE_REACHED_Q_BACK):
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return -20
+            else:
+                return 20
+        elif Q_BACK_NOT_IN_BOUNDS:
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return -20
+            else:
+                return 20
+
+
     def reset(self):
         # reset world
         self.reset_callback(self.world)
@@ -111,7 +152,7 @@ class MultiAgentEnv(gym.Env):
         # record observations for each agent
         obs_n = []
         self.agents = self.world.policy_agents
-        for agent in self.agents:
+        for agent in sef.get_agents():
             obs_n.append(self._get_obs(agent))
         return obs_n
 
@@ -129,10 +170,41 @@ class MultiAgentEnv(gym.Env):
 
     # get dones for a particular agent
     # unused right now -- agents are allowed to go beyond the viewing screen
-    def _get_done(self, agent):
-        if self.done_callback is None:
-            return False
-        return self.done_callback(agent, self.world)
+    # def _get_done(self, agent):
+    #     if self.done_callback is None:
+    #         return False
+    #     return self.done_callback(agent, self.world)
+
+    def done_callback(self, agent, world):
+    
+        # Agent is done if it is out of bounds
+        if (not agent.in_bounds):
+            return AGENT_OUT_OF_BOUNDS
+
+        q_back = list(filter(lambda player: player.position == 'q_back', world.agents))[0]
+        d_line = list(filter(lambda player: player.position == 'd_line', world.agents))
+        line_of_scrimmage = world.line_of_scrimmage
+        q_pos = q_back.state.p_pos
+
+        # Quarterback is past line of scrimmage
+        if (q_pos[1] > (line_of_scrimmage + 10)): 
+            return Q_BACK_LINE_OF_SCRIMMAGE
+
+        if (not q_back.in_bounds):
+            return Q_BACK_NOT_IN_BOUNDS
+
+        for d_player in d_line:
+            # Check if d_player is close to q_back (ie touching, look into how to find that out)
+            # If so return True
+            d_pos = d_player.state.p_pos
+            dist_min = q_back.size + d_player.size
+
+            # If the quarterback and defensive player are touching, set agents to done
+            if (((d_pos[0] - q_pos[0])**2 + (d_pos[1] - q_pos[1])**2)**0.5 < dist_min):
+                return D_LINE_REACHED_Q_BACK
+
+        return NOT_DONE
+
 
     # get reward for a particular agent
     def _get_reward(self, agent):

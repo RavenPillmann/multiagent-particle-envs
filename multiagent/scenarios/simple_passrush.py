@@ -1,10 +1,11 @@
 import numpy as np
 from multiagent.core import World, Agent, Landmark
 from multiagent.scenario import BaseScenario
+from multiagent.scenarios import constants
 
-D_LINE = 'd_line'
-O_LINE = 'o_line'
-Q_BACK = 'q_back'
+# D_LINE = 'd_line'
+# O_LINE = 'o_line'
+# Q_BACK = 'q_back'
 
 class Scenario(BaseScenario):
 
@@ -28,27 +29,30 @@ class Scenario(BaseScenario):
             d.position = D_LINE
             d.size = 0.15 # TODO: INVESTIGATE THIS VAL
             d.in_bounds = True
+            d.is_done = False
             world.agents.append(d)
 
         # Add offensive linemen
         o_line = [Agent() for i in range(num_offensive_linemen)]
         for i, o in enumerate(o_line):
-            o.name = 'agent %d' % i + num_defensive_linemen
+            o.name = 'agent %d' % (i + num_defensive_linemen)
             o.collide = False # TODO: INVESTIGATE THIS VAL
             o.silent = True
             o.position = O_LINE
             o.size = 0.15 # TODO: INVESTIGATE THIS VAL
             o.in_bounds = True
+            o.is_done = False
             world.agents.append(o)
 
         # Add quarterback
         q_back = Agent()
-        q_back.name = 'agent %d' % num_defensive_linemen + num_offensive_linemen
+        q_back.name = 'agent %d' % (num_defensive_linemen + num_offensive_linemen)
         q_back.collide = False # TODO: INVESTIGATE THIS VAL
         q_back.silent = True
         q_back.position = Q_BACK
         q_back.size = 0.15
         q_back.in_bounds = True
+        q_back.is_done = False
         world.agents.append(q_back)
 
         # make initial conditions
@@ -74,6 +78,8 @@ class Scenario(BaseScenario):
                 y = world.line_of_scrimmage - np.random.uniform(3, 7) # THESE ARE RANDOMLY CHOSEN BOUNDS
                 x = 26
                 agent.state.p_pos = np.array([x, y])
+            agent.is_done = False
+            agent.in_bounds = True
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
     
@@ -94,11 +100,11 @@ class Scenario(BaseScenario):
 
     # return all offensive players
     def offensive_agents(self, world):
-        return [agent for agent in world.agents if ((agent.position == Q_BACK or agent.position == O_LINE) and agent.in_bounds)]
+        return [agent for agent in world.agents if ((agent.position == Q_BACK or agent.position == O_LINE) and agent.in_bounds and not agent.is_done)]
 
     # return all defensive players
     def defensive_agents(self, world):
-        return [agent for agent in world.agents if (agent.position == D_LINE and agent.in_bounds)]
+        return [agent for agent in world.agents if (agent.position == D_LINE and agent.in_bounds and not agent.is_done)]
 
     def reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark
@@ -166,4 +172,5 @@ class Scenario(BaseScenario):
                 continue
             other_pos.append(other.state.p_pos - agent.state.p_pos)
 
-        return np.array(other_pos)
+        return np.concatenate(other_pos)
+        # return other_pos

@@ -180,8 +180,10 @@ class World(object):
             agent.state.c = agent.action.c + noise
 
         # Set agent to out of bounds???
-        position = agent.p_pos
-        if (position_x < self.borders[0,0] or position_x > self.borders[1,0] or position_y < self.borders[0, 1] or position_y > self.borders[1, 1]):
+        position = agent.state.p_pos
+        position_x = position[0]
+        position_y = position[1]
+        if (position_x < self.borders[0][0] or position_x > self.borders[1][0] or position_y < self.borders[0][1] or position_y > self.borders[1][1]):
             agent.in_bounds = False
 
     # get collision forces for any contact between two entities
