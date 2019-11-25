@@ -1,7 +1,7 @@
 import numpy as np
 from multiagent.core import World, Agent, Landmark
 from multiagent.scenario import BaseScenario
-from multiagent.scenarios import constants
+from multiagent.scenarios.constants import D_LINE, O_LINE, Q_BACK
 
 # D_LINE = 'd_line'
 # O_LINE = 'o_line'
@@ -30,7 +30,8 @@ class Scenario(BaseScenario):
             d.size = 0.15 # TODO: INVESTIGATE THIS VAL
             d.in_bounds = True
             d.is_done = False
-            world.agents.append(d)
+            # world.agents.append(d)
+            world.policy_agents.append(d)
 
         # Add offensive linemen
         o_line = [Agent() for i in range(num_offensive_linemen)]
@@ -42,7 +43,8 @@ class Scenario(BaseScenario):
             o.size = 0.15 # TODO: INVESTIGATE THIS VAL
             o.in_bounds = True
             o.is_done = False
-            world.agents.append(o)
+            # world.agents.append(o)
+            world.policy_agents.append(o)
 
         # Add quarterback
         q_back = Agent()
@@ -53,7 +55,8 @@ class Scenario(BaseScenario):
         q_back.size = 0.15
         q_back.in_bounds = True
         q_back.is_done = False
-        world.agents.append(q_back)
+        # world.agents.append(q_back)
+        world.policy_agents.append(q_back)
 
         # make initial conditions
         self.reset_world(world)
@@ -82,6 +85,9 @@ class Scenario(BaseScenario):
             agent.in_bounds = True
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
+
+        world.timeout = np.random.uniform(120, 180)
+        world.time = 0
     
 
     def benchmark_data(self, agent, world):

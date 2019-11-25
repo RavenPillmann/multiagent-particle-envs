@@ -3,13 +3,14 @@ from gym import spaces
 from gym.envs.registration import EnvSpec
 import numpy as np
 from multiagent.multi_discrete import MultiDiscrete
-from multiagent.scenarios import constants
+from multiagent.scenarios.constants import D_LINE, O_LINE, Q_BACK
 
 NOT_DONE = 0
 Q_BACK_LINE_OF_SCRIMMAGE = 1
 AGENT_OUT_OF_BOUNDS = 2
 D_LINE_REACHED_Q_BACK = 3
 Q_BACK_NOT_IN_BOUNDS = 4
+Q_BACK_THREW_BALL = 5
 
 # environment for all agents in the multiagent world
 # currently code assumes that no agents will be created/destroyed at runtime!
@@ -109,7 +110,7 @@ class MultiAgentEnv(gym.Env):
             if is_done:
                 agent.is_done = True
 
-                addition_reward = self.get_final_reward(is_done, agent)
+                additional_reward = self.get_final_reward(is_done, agent)
                 reward = reward + additional_reward
 
             reward_n.append(reward)
@@ -142,6 +143,11 @@ class MultiAgentEnv(gym.Env):
                 return -20
             else:
                 return 20
+        elif Q_BACK_THREW_BALL:
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return 20
+            else:
+                return -20
 
 
     def reset(self):
@@ -152,7 +158,7 @@ class MultiAgentEnv(gym.Env):
         # record observations for each agent
         obs_n = []
         self.agents = self.world.policy_agents
-        for agent in sef.get_agents():
+        for agent in self.get_agents():
             obs_n.append(self._get_obs(agent))
         return obs_n
 
@@ -177,6 +183,10 @@ class MultiAgentEnv(gym.Env):
 
     def done_callback(self, agent, world):
     
+        # Use world.timeout, and see what's wrong
+        if world.time > world.timeout:
+            return Q_BACK_THREW_BALL
+
         # Agent is done if it is out of bounds
         if (not agent.in_bounds):
             return AGENT_OUT_OF_BOUNDS

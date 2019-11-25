@@ -97,6 +97,7 @@ class World(object):
         # contact response parameters
         self.contact_force = 1e+2
         self.contact_margin = 1e-3
+        self.time = 0
 
         self.borders = [] # x/y of border rectangle
         self.line_of_scrimmage = 50 #number between 10 and 110
@@ -118,6 +119,7 @@ class World(object):
 
     # update state of the world
     def step(self):
+        self.time += 1
         # set actions for scripted agents 
         for agent in self.scripted_agents:
             agent.action = agent.action_callback(agent, self)
