@@ -30,8 +30,8 @@ class Scenario(BaseScenario):
             d.size = 0.15 # TODO: INVESTIGATE THIS VAL
             d.in_bounds = True
             d.is_done = False
-            # world.agents.append(d)
-            world.policy_agents.append(d)
+            world.agents.append(d)
+            # world.policy_agents.append(d)
 
         # Add offensive linemen
         o_line = [Agent() for i in range(num_offensive_linemen)]
@@ -43,8 +43,8 @@ class Scenario(BaseScenario):
             o.size = 0.15 # TODO: INVESTIGATE THIS VAL
             o.in_bounds = True
             o.is_done = False
-            # world.agents.append(o)
-            world.policy_agents.append(o)
+            world.agents.append(o)
+            # world.policy_agents.append(o)
 
         # Add quarterback
         q_back = Agent()
@@ -55,8 +55,8 @@ class Scenario(BaseScenario):
         q_back.size = 0.15
         q_back.in_bounds = True
         q_back.is_done = False
-        # world.agents.append(q_back)
-        world.policy_agents.append(q_back)
+        world.agents.append(q_back)
+        # world.policy_agents.append(q_back)
 
         # make initial conditions
         self.reset_world(world)
@@ -86,23 +86,9 @@ class Scenario(BaseScenario):
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
 
-        world.timeout = np.random.uniform(120, 180)
+        world.timeout = np.random.uniform(3, 5)
         world.time = 0
-    
 
-    def benchmark_data(self, agent, world):
-        # returns data for benchmarking purposes
-        # if agent.adversary:
-        #     return np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))
-        # else:
-        #     dists = []
-        #     for l in world.landmarks:
-        #         dists.append(np.sum(np.square(agent.state.p_pos - l.state.p_pos)))
-        #     dists.append(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
-        #     return tuple(dists)
-
-        # WHAT TO BENCHMARK??
-        pass
 
     # return all offensive players
     def offensive_agents(self, world):
@@ -180,3 +166,16 @@ class Scenario(BaseScenario):
 
         return np.concatenate(other_pos)
         # return other_pos
+
+
+    def benchmark_data(self, agent, world):
+        # returns data for benchmarking purposes
+        if agent.position == D_LINE:
+            # Benchmark the position from each D_LINE to Q_BACK
+            q_back = world.get_agents().filter(lambda x: x.position == Q_BACK)
+            return np.sum(np.square(q_back.state.p_pos - agent.state.p_pos))
+        elif agent.position == Q_BACK:
+            return world.line_of_scrimmage - agent.state.p_pos[1]
+        elif agent.position == O_LINE:
+            q_back = world.get_agents().filter(lambda x: x.position == Q_BACK)
+            return np.sum(np.square(q_back.state.p_pos - agent.state.p_pos))

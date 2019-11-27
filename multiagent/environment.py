@@ -94,6 +94,7 @@ class MultiAgentEnv(gym.Env):
         done_n = []
         info_n = {'n': []}
         self.agents = self.world.policy_agents
+        # print(self.agents)
         # set action for each agent
         for i, agent in enumerate(self.agents):
             self._set_action(action_n[i], agent, self.action_space[i])
