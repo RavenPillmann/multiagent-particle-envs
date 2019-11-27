@@ -24,12 +24,13 @@ class Scenario(BaseScenario):
         d_line = [Agent() for i in range(num_defensive_linemen)]
         for i, d in enumerate(d_line):
             d.name = 'agent %d' % i
-            d.collide = False # TODO: INVESTIGATE THIS VAL
+            d.collide = True # TODO: INVESTIGATE THIS VAL
             d.silent = True
             d.position = D_LINE
             d.size = 0.15 # TODO: INVESTIGATE THIS VAL
             d.in_bounds = True
             d.is_done = False
+            d.color = np.array([0.25, 0.25, 0.25])
             world.agents.append(d)
             # world.policy_agents.append(d)
 
@@ -37,24 +38,26 @@ class Scenario(BaseScenario):
         o_line = [Agent() for i in range(num_offensive_linemen)]
         for i, o in enumerate(o_line):
             o.name = 'agent %d' % (i + num_defensive_linemen)
-            o.collide = False # TODO: INVESTIGATE THIS VAL
+            o.collide = True # TODO: INVESTIGATE THIS VAL
             o.silent = True
             o.position = O_LINE
             o.size = 0.15 # TODO: INVESTIGATE THIS VAL
             o.in_bounds = True
             o.is_done = False
+            o.color = np.array([0.75, 0.25, 0.25])
             world.agents.append(o)
             # world.policy_agents.append(o)
 
         # Add quarterback
         q_back = Agent()
         q_back.name = 'agent %d' % (num_defensive_linemen + num_offensive_linemen)
-        q_back.collide = False # TODO: INVESTIGATE THIS VAL
+        q_back.collide = True # TODO: INVESTIGATE THIS VAL
         q_back.silent = True
         q_back.position = Q_BACK
         q_back.size = 0.15
         q_back.in_bounds = True
         q_back.is_done = False
+        q_back.color = np.array([0.25, 0.25, 0.75])
         world.agents.append(q_back)
         # world.policy_agents.append(q_back)
 
@@ -70,12 +73,12 @@ class Scenario(BaseScenario):
         # set random initial states
         for agent in world.agents:
             if (agent.position == D_LINE):
-                y = world.line_of_scrimmage + 0.1
-                x = np.random.uniform(17, 35) # TODO: As far as I can tell, this places them all between the hashes
+                y = world.line_of_scrimmage + 0.5
+                x = np.random.uniform(21, 30) # TODO: As far as I can tell, this places them all between the hashes
                 agent.state.p_pos = np.array([x, y])
             elif (agent.position == O_LINE):
-                y = world.line_of_scrimmage - 0.1
-                x = np.random.uniform(17, 35)
+                y = world.line_of_scrimmage - 0.5
+                x = np.random.uniform(23, 28)
                 agent.state.p_pos = np.array([x, y])
             elif (agent.position == Q_BACK):
                 y = world.line_of_scrimmage - np.random.uniform(3, 7) # THESE ARE RANDOMLY CHOSEN BOUNDS
