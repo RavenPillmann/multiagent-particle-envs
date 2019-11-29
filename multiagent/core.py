@@ -120,6 +120,7 @@ class World(object):
     # update state of the world
     def step(self):
         self.time += 1
+        # print("time", self.time)
         # set actions for scripted agents 
         for agent in self.scripted_agents:
             agent.action = agent.action_callback(agent, self)

@@ -81,7 +81,7 @@ class Scenario(BaseScenario):
                 x = np.random.uniform(23, 28)
                 agent.state.p_pos = np.array([x, y])
             elif (agent.position == Q_BACK):
-                y = world.line_of_scrimmage - np.random.uniform(3, 7) # THESE ARE RANDOMLY CHOSEN BOUNDS
+                y = world.line_of_scrimmage - np.random.uniform(5, 10) # THESE ARE RANDOMLY CHOSEN BOUNDS
                 x = 26
                 agent.state.p_pos = np.array([x, y])
             agent.is_done = False
@@ -89,7 +89,7 @@ class Scenario(BaseScenario):
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
 
-        world.timeout = np.random.uniform(3, 5)
+        world.timeout = np.random.uniform(120, 180)
         world.time = 0
 
 
@@ -153,7 +153,11 @@ class Scenario(BaseScenario):
         #     if np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))) < 2 * agent.goal_a.size:
         #         adv_rew += 5
         #     return adv_rew
-        return -1 # -1 for each timestep the play continues
+
+        # TODO: REWARD DISTANCE FROM D LINE TO QUARTER BACK
+        q_back = [agent for agent in world.agents if agent.position == Q_BACK][0]
+        return -np.sqrt(np.sum(np.square(agent.state.p_pos - q_back.state.p_pos)))
+        # return -1 # -1 for each timestep the play continues
 
 
     def observation(self, agent, world):
@@ -163,11 +167,13 @@ class Scenario(BaseScenario):
 
         other_pos = []
         for other in world.agents:
-            if (other is agent) or not agent.in_bounds:
+            if (other is agent):
                 continue
             other_pos.append(other.state.p_pos - agent.state.p_pos)
 
+        # if (len(other_pos)):
         return np.concatenate(other_pos)
+        # return np.array([])
         # return other_pos
 
 

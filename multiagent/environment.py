@@ -86,7 +86,7 @@ class MultiAgentEnv(gym.Env):
         self._reset_render()
 
     def get_agents(self):
-        return [agent for agent in self.agents if not agent.is_done]
+        return [agent if not agent.is_done else None for agent in self.agents]
 
     def step(self, action_n):
         obs_n = []
@@ -101,17 +101,21 @@ class MultiAgentEnv(gym.Env):
         # advance world state
         self.world.step()
         # record observation for each agent
+        # print("New step")
         for agent in self.agents:
             obs_n.append(self._get_obs(agent))
             reward = self._get_reward(agent)
             is_done = self.done_callback(agent, self.world)
-            done_n.append(is_done)
+            done_n.append(is_done > 0)
             # TODO: 
             # If done, I need to somehow indicate that so that no more actions are taken...
-            if is_done:
+            if is_done > 0:
                 agent.is_done = True
 
+                # print("agent position", agent.position)
+                # print(agent.state.p_pos)
                 additional_reward = self.get_final_reward(is_done, agent)
+                # print("additional_reward", additional_reward)
                 reward = reward + additional_reward
 
             reward_n.append(reward)
@@ -127,6 +131,7 @@ class MultiAgentEnv(gym.Env):
 
 
     def get_final_reward(self, is_done, agent):
+        # print(is_done, Q_BACK_NOT_IN_BOUNDS)
         if (is_done == Q_BACK_LINE_OF_SCRIMMAGE):
             if (agent.position == O_LINE) or (agent.position == Q_BACK):
                 return 20
@@ -139,12 +144,12 @@ class MultiAgentEnv(gym.Env):
                 return -20
             else:
                 return 20
-        elif Q_BACK_NOT_IN_BOUNDS:
+        elif is_done == Q_BACK_NOT_IN_BOUNDS:
             if (agent.position == O_LINE) or (agent.position == Q_BACK):
                 return -20
             else:
                 return 20
-        elif Q_BACK_THREW_BALL:
+        elif is_done == Q_BACK_THREW_BALL:
             if (agent.position == O_LINE) or (agent.position == Q_BACK):
                 return 20
             else:
@@ -160,7 +165,10 @@ class MultiAgentEnv(gym.Env):
         obs_n = []
         self.agents = self.world.policy_agents
         for agent in self.get_agents():
-            obs_n.append(self._get_obs(agent))
+            obs = None
+            if agent:
+                obs = self._get_obs(agent)
+            obs_n.append(obs)
         return obs_n
 
     # get info used for benchmarking
