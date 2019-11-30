@@ -89,7 +89,7 @@ class Scenario(BaseScenario):
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
 
-        world.timeout = np.random.uniform(120, 180)
+        world.timeout = np.random.uniform(240, 300)
         world.time = 0
 
 
