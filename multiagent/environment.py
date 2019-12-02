@@ -6,7 +6,7 @@ from multiagent.multi_discrete import MultiDiscrete
 from multiagent.scenarios.constants import D_LINE, O_LINE, Q_BACK
 
 NOT_DONE = 0
-Q_BACK_LINE_OF_SCRIMMAGE = 1
+Q_BACK_FIRST_DOWN_LINE = 1
 AGENT_OUT_OF_BOUNDS = 2
 D_LINE_REACHED_Q_BACK = 3
 Q_BACK_NOT_IN_BOUNDS = 4
@@ -102,19 +102,25 @@ class MultiAgentEnv(gym.Env):
         self.world.step()
         # record observation for each agent
         # print("New step")
+
+        chance_of_completion = np.random.uniform(0.0, 1.0)
+        made_throw = chance_of_completion < list(filter(lambda player: player.position == 'q_back', self.world.agents))[0].completion_percentage
+
         for agent in self.agents:
             obs_n.append(self._get_obs(agent))
             reward = self._get_reward(agent)
             is_done = self.done_callback(agent, self.world)
-            done_n.append(is_done > 0)
+            done_n.append(is_done)
             # TODO: 
             # If done, I need to somehow indicate that so that no more actions are taken...
-            if is_done > 0:
+            if is_done != NOT_DONE:
                 agent.is_done = True
 
                 # print("agent position", agent.position)
                 # print(agent.state.p_pos)
-                additional_reward = self.get_final_reward(is_done, agent)
+
+                additional_reward = self.get_final_reward(is_done, agent, made_throw)
+
                 # print("additional_reward", additional_reward)
                 reward = reward + additional_reward
 
@@ -130,30 +136,31 @@ class MultiAgentEnv(gym.Env):
 
 
 
-    def get_final_reward(self, is_done, agent):
+    def get_final_reward(self, is_done, agent, made_throw):
         # print(is_done, Q_BACK_NOT_IN_BOUNDS)
-        if (is_done == Q_BACK_LINE_OF_SCRIMMAGE):
+
+        if (is_done == Q_BACK_FIRST_DOWN_LINE):
             if (agent.position == O_LINE) or (agent.position == Q_BACK):
-                return 20
+                return 120
             else:
-                return -20
+                return -120
         elif (is_done == AGENT_OUT_OF_BOUNDS):
-            return -20
+            return -80
         elif (is_done == D_LINE_REACHED_Q_BACK):
             if (agent.position == O_LINE) or (agent.position == Q_BACK):
-                return -20
+                return -120 # TODO 
             else:
-                return 20
+                return 120
         elif is_done == Q_BACK_NOT_IN_BOUNDS:
             if (agent.position == O_LINE) or (agent.position == Q_BACK):
-                return -20
+                return -80
             else:
-                return 20
+                return 80
         elif is_done == Q_BACK_THREW_BALL:
             if (agent.position == O_LINE) or (agent.position == Q_BACK):
-                return 20
+                return 80 if made_throw else -80
             else:
-                return -20
+                return -80 if made_throw else 80
 
 
     def reset(self):
@@ -190,8 +197,7 @@ class MultiAgentEnv(gym.Env):
     #         return False
     #     return self.done_callback(agent, self.world)
 
-    def done_callback(self, agent, world):
-    
+    def done_callback(self, agent, world):    
         # Use world.timeout, and see what's wrong
         if world.time > world.timeout:
             return Q_BACK_THREW_BALL
@@ -206,8 +212,8 @@ class MultiAgentEnv(gym.Env):
         q_pos = q_back.state.p_pos
 
         # Quarterback is past line of scrimmage
-        if (q_pos[1] > (line_of_scrimmage + 10)): 
-            return Q_BACK_LINE_OF_SCRIMMAGE
+        if (q_pos[1] > (line_of_scrimmage + world.first_down_line)): 
+            return Q_BACK_FIRST_DOWN_LINE
 
         if (not q_back.in_bounds):
             return Q_BACK_NOT_IN_BOUNDS

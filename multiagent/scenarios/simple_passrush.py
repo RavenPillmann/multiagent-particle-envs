@@ -76,20 +76,28 @@ class Scenario(BaseScenario):
                 y = world.line_of_scrimmage + 0.5
                 x = np.random.uniform(21, 30) # TODO: As far as I can tell, this places them all between the hashes
                 agent.state.p_pos = np.array([x, y])
+                agent.accel = np.random.uniform(3.0, 4.0)
+                agent.max_speed = np.random.uniform(1.0, 1.2)
             elif (agent.position == O_LINE):
                 y = world.line_of_scrimmage - 0.5
                 x = np.random.uniform(23, 28)
                 agent.state.p_pos = np.array([x, y])
+                agent.accel = np.random.uniform(3.0, 4.0)
+                agent.max_speed = np.random.uniform(1.0, 1.2)
             elif (agent.position == Q_BACK):
                 y = world.line_of_scrimmage - np.random.uniform(5, 10) # THESE ARE RANDOMLY CHOSEN BOUNDS
                 x = 26
                 agent.state.p_pos = np.array([x, y])
+                agent.completion_percentage = np.random.uniform(0.5, 1)
+                agent.accel = np.random.uniform(3.0, 4.0)
+                agent.max_speed = np.random.uniform(1.0, 1.2)
             agent.is_done = False
             agent.in_bounds = True
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
 
-        world.timeout = np.random.uniform(240, 300)
+        world.first_down_line = np.random.uniform(2, 20)
+        world.timeout = np.random.uniform(400, 600)
         world.time = 0
 
 
@@ -155,9 +163,9 @@ class Scenario(BaseScenario):
         #     return adv_rew
 
         # TODO: REWARD DISTANCE FROM D LINE TO QUARTER BACK
-        q_back = [agent for agent in world.agents if agent.position == Q_BACK][0]
-        return -np.sqrt(np.sum(np.square(agent.state.p_pos - q_back.state.p_pos)))
-        # return -1 # -1 for each timestep the play continues
+        # q_back = [agent for agent in world.agents if agent.position == Q_BACK][0]
+        # return -np.sqrt(np.sum(np.square(agent.state.p_pos - q_back.state.p_pos)))
+        return -1 # -1 for each timestep the play continues
 
 
     def observation(self, agent, world):
