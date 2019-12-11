@@ -1,0 +1,49 @@
+policy # 1
+
+1575135082.2698061 
+
+if (is_done == Q_BACK_LINE_OF_SCRIMMAGE):
+    if (agent.position == O_LINE) or (agent.position == Q_BACK):
+        return 2000
+    else:
+        return -2000
+elif (is_done == AGENT_OUT_OF_BOUNDS):
+    return -2000
+elif (is_done == D_LINE_REACHED_Q_BACK):
+    if (agent.position == O_LINE) or (agent.position == Q_BACK):
+        return -2000
+    else:
+        return 2000
+elif is_done == Q_BACK_NOT_IN_BOUNDS:
+    if (agent.position == O_LINE) or (agent.position == Q_BACK):
+        return -2000
+    else:
+        return 2000
+elif is_done == Q_BACK_THREW_BALL:
+    if (agent.position == O_LINE) or (agent.position == Q_BACK):
+        return 2500 # Use a percentage chance to see whether to get 2500 or -2500 reward
+    else:
+        return -2500 # SAME HERE
+
+
+# Policy 2
+    Set timeout to between 180 and 240 from 240 to 300
+    Percentage completion that influences passing
+    Added differences in acceleration and max speed for players (randomly chosen)
+    Reduced final rewards
+
+    log: 1575135401.346167
+
+
+# Policy 3
+    Set timeout to 400-600
+    Changes defensive reward to -1 per timestep
+    Changed final rewards (reduced by 80%)
+    Made first down line randomly chosen
+    1575140829.9105742
+    and
+    1575149235.3658571
+    and 
+    1575153989.447642
+    and 
+    COMPUTE ENGINE 1575300876.7091556 and possibly continuing with 1575341301.629057 and 1575345808.7694502

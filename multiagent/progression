@@ -1,0 +1,52 @@
+Policy 8:
+(under policy 9)
+1575952705.40483 
+
+Policy 7 (maybe):
+- Consider adding observations of the tag scenario
+- Throwing should have percentage based on distance the quarterback is from the line of scrimmage, but the max possible reward should be higher than running across the first down line.
+
+1575742530.2761552
+
+
+Policy 6:
+- Defense isn't actually coming in contact with qb, so I'm changing the -1 to -distance/10
+- Q_back isn't running, but hopefully this will teach them to do so
+- See screenshot, changed final rewards
+- Widened completion percentage for throw, x position on field of each player by 3 yards either side
+- From screenshot, also modified reward for throwing to 800 if completed
+
+1575644012.4287956	
+
+Policy 5, switched to these because qback was running away
+ (check pic)
+
+Policy 4 was 
+
+ def get_final_reward(self, is_done, agent, made_throw):
+        # print(is_done, Q_BACK_NOT_IN_BOUNDS)
+
+        if (is_done == Q_BACK_FIRST_DOWN_LINE):
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return 120
+            else:
+                return -120
+        elif (is_done == AGENT_OUT_OF_BOUNDS):
+            return -80
+        elif (is_done == D_LINE_REACHED_Q_BACK):
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return -120 # TODO 
+            else:
+                return 120
+        elif is_done == Q_BACK_NOT_IN_BOUNDS:
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return -80
+            else:
+                return 80
+        elif is_done == Q_BACK_THREW_BALL:
+            if (agent.position == O_LINE) or (agent.position == Q_BACK):
+                return 80 if made_throw else -80
+            else:
+                return -80 if made_throw else 80
+
+Logs before polcy 5 log are policy 4 (2 or 3 before) 1575345808.7694502 

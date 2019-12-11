@@ -97,6 +97,7 @@ class World(object):
         # contact response parameters
         self.contact_force = 1e+2
         self.contact_margin = 1e-3
+        self.time = 0
 
         self.borders = [] # x/y of border rectangle
         self.line_of_scrimmage = 50 #number between 10 and 110
@@ -118,10 +119,13 @@ class World(object):
 
     # update state of the world
     def step(self):
+        self.time += 1
+        # print("time", self.time)
         # set actions for scripted agents 
         for agent in self.scripted_agents:
             agent.action = agent.action_callback(agent, self)
         # gather forces applied to entities
+        # print("num entities", len(self.entities))
         p_force = [None] * len(self.entities)
         # apply agent physical controls
         p_force = self.apply_action_force(p_force)
@@ -180,8 +184,10 @@ class World(object):
             agent.state.c = agent.action.c + noise
 
         # Set agent to out of bounds???
-        position = agent.p_pos
-        if (position_x < self.borders[0,0] or position_x > self.borders[1,0] or position_y < self.borders[0, 1] or position_y > self.borders[1, 1]):
+        position = agent.state.p_pos
+        position_x = position[0]
+        position_y = position[1]
+        if (position_x < self.borders[0][0] or position_x > self.borders[1][0] or position_y < self.borders[0][1] or position_y > self.borders[1][1]):
             agent.in_bounds = False
 
     # get collision forces for any contact between two entities
