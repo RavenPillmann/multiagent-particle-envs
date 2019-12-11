@@ -80,7 +80,7 @@ class MultiAgentEnv(gym.Env):
         # rendering
         self.shared_viewer = shared_viewer
         if self.shared_viewer:
-            self.viewers = [None]
+            self.viewer = None
         else:
             self.viewers = [None] * self.n
         self._reset_render()
@@ -113,6 +113,8 @@ class MultiAgentEnv(gym.Env):
             done_n.append(is_done)
             # TODO: 
             # If done, I need to somehow indicate that so that no more actions are taken...
+            # if (agent.position == 'q_back'):
+                # print(agent.state.p_pos, self.world.line_of_scrimmage, agent.state.p_pos[1], self.world.line_of_scrimmage - agent.state.p_pos[1])
             if is_done != NOT_DONE:
                 agent.is_done = True
 
@@ -294,6 +296,81 @@ class MultiAgentEnv(gym.Env):
         self.render_geoms_xform = None
 
     # render environment
+    def render_whole_field(self, mode='human'):
+        if mode == 'human':
+            alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            message = ''
+            for agent in self.world.agents:
+                comm = []
+                for other in self.world.agents:
+                    if other is agent: continue
+                    if np.all(other.state.c == 0):
+                        word = '_'
+                    else:
+                        word = alphabet[np.argmax(other.state.c)]
+                    message += (other.name + ' to ' + agent.name + ': ' + word + '   ')
+
+        # for i in range(len(self.viewers)):
+        #     # create viewers (if necessary)
+        #     if self.viewers[i] is None:
+        #         # import rendering only if we need it (and don't import for headless machines)
+        #         #from gym.envs.classic_control import rendering
+        #         from multiagent import rendering
+        #         self.viewers[i] = rendering.Viewer(700,700)
+
+        if self.viewer is None:
+            from multiagent import rendering
+            self.viewer = rendering.Viewer(53*7, 120*7)
+
+        # create rendering geometry
+        if self.render_geoms is None:
+            # import rendering only if we need it (and don't import for headless machines)
+            #from gym.envs.classic_control import rendering
+            from multiagent import rendering
+            self.render_geoms = []
+            self.render_geoms_xform = []
+            for entity in self.world.entities:
+                size = 2*entity.size
+                # if entity.position == 'q_back':
+                #     size = 2*size
+                geom = rendering.make_circle(size)
+                xform = rendering.Transform()
+                if 'q_back' == entity.position:
+                    geom.set_color(0, 1, 0, alpha=0.5)
+                else:
+                    geom.set_color(*entity.color)
+                geom.add_attr(xform)
+                self.render_geoms.append(geom)
+                self.render_geoms_xform.append(xform)
+
+            self.viewer.geoms = []
+            for geom in self.render_geoms:
+                self.viewer.add_geom(geom)
+
+        line_of_scrimmage = self.world.line_of_scrimmage
+        first_down_line = line_of_scrimmage + self.world.first_down_line
+
+        self.viewer.draw_line((0, line_of_scrimmage), (53, line_of_scrimmage))
+        self.viewer.draw_line((0, first_down_line), (53, first_down_line))
+
+        results = []
+        from multiagent import rendering
+        # update bounds to center around agent
+        cam_range = 1
+        if self.shared_viewer:
+            pos = np.zeros(self.world.dim_p)
+        else:
+            pos = self.agents[i].state.p_pos
+        self.viewer.set_bounds(0, 53, 0, 120)
+        # update geometry positions
+        for e, entity in enumerate(self.world.entities):
+            self.render_geoms_xform[e].set_translation(*entity.state.p_pos)
+        # render to display or array
+        results.append(self.viewer.render(return_rgb_array = mode=='rgb_array'))
+
+        return results
+
+    # render environment
     def render(self, mode='human'):
         if mode == 'human':
             alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -307,7 +384,6 @@ class MultiAgentEnv(gym.Env):
                     else:
                         word = alphabet[np.argmax(other.state.c)]
                     message += (other.name + ' to ' + agent.name + ': ' + word + '   ')
-            print(message)
 
         for i in range(len(self.viewers)):
             # create viewers (if necessary)
@@ -327,8 +403,8 @@ class MultiAgentEnv(gym.Env):
             for entity in self.world.entities:
                 geom = rendering.make_circle(entity.size)
                 xform = rendering.Transform()
-                if 'agent' in entity.name:
-                    geom.set_color(*entity.color, alpha=0.5)
+                if 'q_back' == entity.position:
+                    geom.set_color(0, 1, 0, alpha=0.5)
                 else:
                     geom.set_color(*entity.color)
                 geom.add_attr(xform)

@@ -6,34 +6,53 @@ import argparse
 from multiagent.environment import MultiAgentEnv
 from multiagent.policy import InteractivePolicy
 import multiagent.scenarios as scenarios
+import tf_util as U
 
 if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-s', '--scenario', default='simple.py', help='Path of the scenario Python script.')
+    parser.add_argument('-l', '--load_dir', help='Session load directory')
     args = parser.parse_args()
 
-    # load scenario from script
-    scenario = scenarios.load(args.scenario).Scenario()
-    # create world
-    world = scenario.make_world()
-    # create multiagent environment
-    env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, info_callback=None, shared_viewer = False)
-    # render call to create viewer window (necessary only for interactive policies)
-    env.render()
-    # create interactive policies for each agent
-    policies = [InteractivePolicy(env,i) for i in range(env.n)]
-    # execution loop
-    obs_n = env.reset()
-    while True:
-        # query for action from each agent's policy
-        act_n = []
-        for i, policy in enumerate(policies):
-            act_n.append(policy.action(obs_n[i]))
-        # step environment
-        obs_n, reward_n, done_n, _ = env.step(act_n)
-        # render all agent views
-        env.render()
-        # display rewards
-        #for agent in env.world.agents:
-        #    print(agent.name + " reward: %0.3f" % env._get_reward(agent))
+    with U.single_threaded_session():
+
+        # load scenario from script
+        scenario = scenarios.load(args.scenario).Scenario()
+        # create world
+        world = scenario.make_world()
+        # create multiagent environment
+        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, info_callback=None, shared_viewer = True)
+        # render call to create viewer window (necessary only for interactive policies)
+        env.render_whole_field()
+        obs_shape_n = [env.observation_space[i].shape for i in range(env.n)]
+        num_adversaries = 7
+        trainers = get_trainers(env, num_adversaries, obs_shape_n, args)
+        # create interactive policies for each agent
+        policies = [InteractivePolicy(env,i) for i in range(env.n)]
+        # execution loop
+
+        # load session
+        saver = U.load_state(args.load_dir)
+        # TODO: Pick the latest?
+        # TODO: Do I need to make agents???
+        # So now the session hosted by U.single_threaded_session SHOULD be loaded?
+
+        obs_n = env.reset()
+        while True:
+            # query for action from each agent's policy
+            # act_n = []
+            # for i, policy in enumerate(policies):
+            #     act_n.append(policy.action(obs_n[i]))
+
+            act_n = [agent.action(obs) for agent, obs in zip(trainers,obs_n)]
+            # environment step
+            # new_obs_n, rew_n, done_n, info_n = env.step(action_n)
+
+            # step environment
+            obs_n, reward_n, done_n, _ = env.step(act_n)
+            # render all agent views
+            env.render_whole_field()
+            # display rewards
+            #for agent in env.world.agents:
+            #    print(agent.name + " reward: %0.3f" % env._get_reward(agent))

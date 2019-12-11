@@ -18,8 +18,8 @@ class InteractivePolicy(Policy):
         self.move = [False for i in range(4)]
         self.comm = [False for i in range(env.world.dim_c)]
         # register keyboard events with this environment's window
-        env.viewers[agent_index].window.on_key_press = self.key_press
-        env.viewers[agent_index].window.on_key_release = self.key_release
+        # env.viewers[agent_index].window.on_key_press = self.key_press
+        # env.viewers[agent_index].window.on_key_release = self.key_release
 
     def action(self, obs):
         # ignore observation and just act based on keyboard events
